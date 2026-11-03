@@ -1,0 +1,16 @@
+---
+description: Host de produção do Assessor. Não usar o IP antigo.
+alwaysApply: true
+---
+
+# Produção do Assessor
+
+O servidor do Assessor é `root@assessor.facejus.com.br` (`179.236.66.68`). É o mesmo host do ping `assessor.facejus.com.br` e de `assessor.moope.com.br`.
+
+Não use `147.79.83.207`. Esse IP não responde.
+
+- Senha: `~/.config/moopecrm/vps-ssh-pass` (não copiar a senha para o chat nem para o git)
+- Pasta: `/opt/moope-assessor`
+- Worker no ar: `moope-assessor-worker`
+- Atualizar o Zap: rsync de `src/` para essa pasta, `docker cp` para `/app/src` no worker, `chown assessor:nodejs`, `docker restart moope-assessor-worker`
+- A plataforma de frotas é outro host: `app.moope.com.br`, em `~/.config/moope/vps.env`

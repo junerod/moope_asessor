@@ -1,0 +1,43 @@
+# MOOPE Meu Assessor — produção / VPS
+# Uso (quando informar a máquina final):
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+#     --env-file .env.docker up -d --build
+#
+# Diferenças vs local:
+# - Postgres NÃO publicado no host (só rede interna)
+# - App na porta configurável (default 3010; proxy HTTPS na frente)
+# - restart + limites de memória mais rígidos
+# - APP_ENV=production
+
+services:
+  postgres:
+    ports: !reset []
+    mem_limit: 1024m
+
+  app:
+    ports: !override
+      # Só localhost — Apache/proxy HTTPS na frente (não expor 3010 na internet)
+      - "127.0.0.1:${ASSESSOR_HTTP_PORT:-3010}:3000"
+    environment:
+      APP_ENV: production
+      NODE_ENV: production
+      APP_BASE_URL: ${APP_BASE_URL:?set APP_BASE_URL to public https URL}
+    mem_limit: 768m
+
+  worker:
+    environment:
+      APP_ENV: production
+      NODE_ENV: production
+    mem_limit: 1024m
+
+  scheduler:
+    environment:
+      APP_ENV: production
+      NODE_ENV: production
+    mem_limit: 512m
+
+  migrate:
+    environment:
+      APP_ENV: production
+      NODE_ENV: production

@@ -1,0 +1,12 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build final VPS app signed XLSX",
+			"type": "shell",
+			"command": "sshpass -f \"$HOME/.config/moopecrm/vps-ssh-pass\" ssh -o StrictHostKeyChecking=yes root@assessor.facejus.com.br 'cd /opt/moope-assessor && docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.docker build app'",
+			"isBackground": false,
+			"problemMatcher": []
+		}
+	]
+}

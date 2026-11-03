@@ -1,0 +1,75 @@
+{
+  "name": "moope-assessor",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MOOPE Meu Assessor — WhatsApp-first AI personal/business assistant",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "worker": "tsx src/worker/index.ts",
+    "scheduler": "tsx src/scheduler/index.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:studio": "drizzle-kit studio",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:zernio:smoke": "tsx scripts/zernio-smoke.ts",
+    "smoke:openai": "tsx scripts/smoke.ts openai",
+    "smoke:zernio": "tsx scripts/smoke.ts zernio",
+    "smoke:email": "tsx scripts/smoke.ts email",
+    "smoke:vision": "tsx scripts/smoke.ts vision",
+    "smoke:transcription": "tsx scripts/smoke.ts transcription",
+    "smoke:all": "tsx scripts/smoke.ts all",
+    "smoke:reminder": "tsx scripts/smoke-reminder-pipeline.ts",
+    "smoke:reminder:deliver": "tsx scripts/smoke-reminder-pipeline.ts --deliver",
+    "embeddings:reindex": "tsx scripts/embeddings-reindex.ts",
+    "import:finance-creds": "tsx scripts/import-finance-credentials.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "next lint",
+    "docker:up": "bash scripts/docker/up.sh",
+    "docker:down": "bash scripts/docker/down.sh",
+    "docker:logs": "bash scripts/docker/logs.sh",
+    "docker:migrate": "bash scripts/docker/migrate.sh",
+    "docker:rebuild": "bash scripts/docker/rebuild.sh",
+    "docker:bootstrap-admin": "bash scripts/docker/bootstrap-admin.sh",
+    "docker:ps": "docker compose ps"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1136.0",
+    "@aws-sdk/s3-request-presigner": "^3.1142.0",
+    "bcryptjs": "^3.0.2",
+    "drizzle-orm": "^0.44.5",
+    "exceljs": "^4.4.0",
+    "googleapis": "^178.0.0",
+    "jose": "^6.0.12",
+    "luxon": "^3.7.2",
+    "next": "^15.5.2",
+    "openai": "^6.49.0",
+    "pdf-parse": "^2.4.5",
+    "postgres": "^3.4.7",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "tsx": "^4.20.5",
+    "zod": "^4.1.5"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/luxon": "^3.7.5",
+    "@types/node": "^24.3.0",
+    "@types/pdf-parse": "^1.1.5",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "drizzle-kit": "^0.31.4",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  },
+  "overrides": {
+    "exceljs": {
+      "uuid": "11.1.1"
+    }
+  }
+}

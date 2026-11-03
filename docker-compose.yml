@@ -1,0 +1,127 @@
+# MOOPE Meu Assessor — stack local (Docker)
+#
+#   npm run docker:up
+#   http://localhost:3010/admin
+#
+# Postgres publicado em 54329 (host) para ferramentas locais.
+# App em 3010 para não brigar com `npm run dev` na 3000.
+
+name: moope-assessor
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-app-env: &app-env
+  env_file:
+    - .env.docker
+  environment:
+    NODE_ENV: production
+    APP_ENV: ${APP_ENV:-development}
+    DATABASE_URL: postgres://assessor:assessor@postgres:5432/moope_assessor
+    APP_BASE_URL: ${APP_BASE_URL:-http://localhost:3010}
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: moope-assessor-pg
+    restart: unless-stopped
+    ports:
+      - "54329:5432"
+    environment:
+      POSTGRES_USER: assessor
+      POSTGRES_PASSWORD: assessor
+      POSTGRES_DB: moope_assessor
+    volumes:
+      - assessor_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U assessor -d moope_assessor"]
+      interval: 3s
+      timeout: 5s
+      retries: 30
+    logging: *default-logging
+    networks: [assessor]
+
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    image: moope-assessor-runtime:local
+    container_name: moope-assessor-migrate
+    <<: *app-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["npx", "tsx", "scripts/migrate.ts"]
+    restart: "no"
+    networks: [assessor]
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: app
+    image: moope-assessor-app:local
+    container_name: moope-assessor-app
+    <<: *app-env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "${ASSESSOR_HTTP_PORT:-3010}:3000"
+    mem_limit: 768m
+    restart: unless-stopped
+    logging: *default-logging
+    networks: [assessor]
+
+  worker:
+    image: moope-assessor-runtime:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: moope-assessor-worker
+    <<: *app-env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    command: ["npx", "tsx", "src/worker/index.ts"]
+    mem_limit: 768m
+    restart: unless-stopped
+    logging: *default-logging
+    networks: [assessor]
+
+  scheduler:
+    image: moope-assessor-runtime:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: moope-assessor-scheduler
+    <<: *app-env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    # --expose-gc: o tick pesado sobe a RAM e depois o V8 devolve. Sem o flag
+    # não dá para forçar a limpeza antes do alerta de memória.
+    command:
+      [
+        "sh",
+        "-c",
+        "export NODE_OPTIONS=\"${NODE_OPTIONS:-} --expose-gc\"; exec npx tsx src/scheduler/index.ts",
+      ]
+    mem_limit: 512m
+    restart: unless-stopped
+    logging: *default-logging
+    networks: [assessor]
+
+networks:
+  assessor:
+    name: moope-assessor-net
+
+volumes:
+  assessor_pg_data:
+    name: moope-assessor-pg-data

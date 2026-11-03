@@ -1,0 +1,92 @@
+.nf {
+  min-height: 100svh;
+  margin: 0;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  color: #0f1b2d;
+  font-family: "Nunito", "Segoe UI", system-ui, sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+
+.nf-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 10% 0%, #90caf9 0%, transparent 55%),
+    radial-gradient(ellipse 60% 50% at 100% 10%, #ffe082 0%, transparent 48%),
+    radial-gradient(ellipse 50% 40% at 70% 100%, #80deea 0%, transparent 46%),
+    linear-gradient(165deg, #d6e8f8 0%, #eef4fb 50%, #f7fafc 100%);
+}
+
+.nf-card {
+  position: relative;
+  width: min(520px, 100%);
+  background: #fff;
+  border-radius: 28px;
+  padding: 2rem 1.6rem 1.5rem;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(13, 71, 161, 0.12);
+}
+
+.nf-card img {
+  border-radius: 18px;
+}
+
+.nf-brand {
+  margin: 0.7rem 0 0;
+  font-family: "Fredoka", "Nunito", sans-serif;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  color: #1565c0;
+}
+
+.nf-card h1 {
+  margin: 0.35rem 0 0;
+  font-family: "Fredoka", "Nunito", sans-serif;
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+
+.nf-lead {
+  margin: 0.7rem auto 0;
+  max-width: 36ch;
+  color: #5a6b7d;
+  line-height: 1.45;
+}
+
+.nf-bubble {
+  margin: 1.1rem auto 0;
+  width: fit-content;
+  background: #e3f2fd;
+  color: #0d47a1;
+  border-radius: 16px 16px 16px 6px;
+  padding: 0.55rem 0.8rem;
+  font-weight: 800;
+}
+
+.nf-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.55rem;
+  margin-top: 1.15rem;
+}
+
+.nf-btn {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.7rem 1rem;
+  font-weight: 800;
+  color: #0d47a1;
+  background: #eef4fb;
+  text-decoration: none;
+}
+
+.nf-btn-main {
+  background: #1565c0;
+  color: #fff;
+}

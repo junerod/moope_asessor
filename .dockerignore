@@ -1,0 +1,41 @@
+# Dependencies
+node_modules
+npm-debug.log*
+yarn-error.log*
+.pnpm-store
+
+# Next / build
+.next
+out
+dist
+coverage
+tsconfig.tsbuildinfo
+
+# Env & secrets (compose uses env_file explicitly)
+.env
+.env.*
+!.env.docker.example
+!.env.example
+
+# Git / IDE
+.git
+.gitignore
+.cursor
+.vscode
+.idea
+
+# Docs / tests (not needed in image)
+docs
+tests
+*.md
+!README.md
+
+# Local data
+.data
+uploads
+tmp
+*.log
+
+# Docker (avoid recursive context weirdness)
+Dockerfile*
+docker-compose*.yml
