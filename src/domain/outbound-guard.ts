@@ -55,11 +55,68 @@ export async function sendGuardedMessage(
 type FailedDigest = {
   conversation_id: string;
   workspace_id: string | null;
+  workspace_name: string | null;
   body_text: string;
   correlation_id: string;
   external_conversation_id: string;
   phone_e164: string | null;
 };
+
+const TIPO_ZAP: Record<string, string> = {
+  daily_brief: "Bom dia",
+  evening_wrap: "Boa noite",
+  weekly_digest: "Resumo da semana",
+  "crm-new": "Aviso do CRM",
+  "crm-reply": "Resposta do CRM",
+  "crm-down": "CRM fora",
+  "gcal-new": "Agenda Google",
+  "gcal-nudge": "Lembrete da agenda",
+  weather_alert: "Clima",
+  horoscope_alert: "Horóscopo",
+  goal_alert: "Meta",
+  bill_due: "Conta a pagar",
+};
+
+export function tipoDoZap(correlationId: string): string {
+  const key = correlationId.split(":")[0] || correlationId;
+  return TIPO_ZAP[key] || key;
+}
+
+export function assuntoCurto(body: string): string {
+  const line = body.replace(/\s+/g, " ").trim();
+  if (!line) return "sem texto";
+  return line.length > 90 ? `${line.slice(0, 87)}…` : line;
+}
+
+export function formatOutboundGuardAlert(input: {
+  retried: number;
+  recovered: number;
+  still: Array<{ phone: string; local: string; tipo: string; assunto: string }>;
+}): string {
+  const groups = new Map<
+    string,
+    { phone: string; local: string; tipo: string; assunto: string; n: number }
+  >();
+  for (const item of input.still) {
+    const key = `${item.local}|${item.tipo}|${item.phone}`;
+    const prev = groups.get(key);
+    if (prev) prev.n += 1;
+    else groups.set(key, { ...item, n: 1 });
+  }
+  const lines = [...groups.values()].slice(0, 8).map((g) =>
+    [
+      `• *${g.local}* · ${g.phone}`,
+      `  ${g.tipo} · *${g.n}*`,
+      `  _${g.assunto}_`,
+    ].join("\n")
+  );
+  return [
+    "⚠️ *Zap que não saiu*",
+    `Tentei de novo: *${input.retried}* · recuperados: *${input.recovered}* · ainda falhou: *${input.still.length}*`,
+    lines.join("\n"),
+    "_Só o número do dev recebe este aviso._",
+  ].join("\n");
+}
 
 export async function runOutboundGuardTick(db: Db): Promise<{
   found: number;
@@ -72,6 +129,7 @@ export async function runOutboundGuardTick(db: Db): Promise<{
       SELECT
         m.conversation_id,
         m.workspace_id,
+        w.name AS workspace_name,
         m.body_text,
         m.correlation_id,
         c.external_conversation_id,
@@ -79,6 +137,7 @@ export async function runOutboundGuardTick(db: Db): Promise<{
       FROM messages m
       JOIN conversations c ON c.id = m.conversation_id
       LEFT JOIN whatsapp_identities wi ON wi.id = c.whatsapp_identity_id
+      LEFT JOIN workspaces w ON w.id = m.workspace_id
       WHERE m.deleted_at IS NULL
         AND m.direction = 'outbound'
         AND m.status = 'failed'
@@ -112,7 +171,12 @@ export async function runOutboundGuardTick(db: Db): Promise<{
 
   let retried = 0;
   let recovered = 0;
-  const still: string[] = [];
+  const still: Array<{
+    phone: string;
+    local: string;
+    tipo: string;
+    assunto: string;
+  }> = [];
 
   for (const row of rows) {
     const ext = String(row.external_conversation_id || "").trim();
@@ -147,7 +211,12 @@ export async function runOutboundGuardTick(db: Db): Promise<{
         phone: row.phone_e164,
       });
     } else {
-      still.push(row.phone_e164 || ext.slice(-8));
+      still.push({
+        phone: row.phone_e164 || ext.slice(-8),
+        local: String(row.workspace_name || "Sem local").trim() || "Sem local",
+        tipo: tipoDoZap(corr),
+        assunto: assuntoCurto(text),
+      });
       logger.warn("outbound_guard_still_failed", {
         correlation_id: corr,
         phone: row.phone_e164,
@@ -162,13 +231,7 @@ export async function runOutboundGuardTick(db: Db): Promise<{
     const recent = typeof hb.age_seconds === "number" && hb.age_seconds < 3 * 3600;
     if (!recent) {
       await beat(db, "outbound_guard", { still: still.length, recovered });
-      const unique = [...new Set(still)].slice(0, 8);
-      const text = [
-        "⚠️ *Zap que não saiu*",
-        `Tentei de novo: *${retried}* · recuperados: *${recovered}* · ainda falhou: *${still.length}*`,
-        unique.map((p) => `• ${p}`).join("\n"),
-        "_O guarda tenta de novo sozinho. Facejus/finance não entram aqui._",
-      ].join("\n");
+      const text = formatOutboundGuardAlert({ retried, recovered, still });
       alerted = await notifyDevWhatsApp(db, text, `outbound-guard:${Date.now()}`);
       if (!alerted) {
         logger.warn("outbound_guard_dev_notify_failed", {
